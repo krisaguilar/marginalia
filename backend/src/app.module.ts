@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { BooksModule } from './books/books.module';
 import { LibraryModule } from './library/library.module';
 import { GoalsModule } from './goals/goals.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { GoalsModule } from './goals/goals.module';
     BooksModule,
     LibraryModule,
     GoalsModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}
