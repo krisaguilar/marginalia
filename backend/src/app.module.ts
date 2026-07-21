@@ -5,6 +5,7 @@ import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import bookProviderConfig from './config/book-provider.config';
 import { validateEnv } from './config/validate-env';
+import { PrismaModule } from './database/prisma.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -20,6 +21,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
       validate: validateEnv,
       load: [appConfig, databaseConfig, jwtConfig, bookProviderConfig],
     }),
+    PrismaModule,
     HealthModule,
     AuthModule,
     UsersModule,
