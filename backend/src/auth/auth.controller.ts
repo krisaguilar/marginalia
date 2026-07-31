@@ -15,12 +15,18 @@ import type { Response } from 'express';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UserResponseDto } from '../users/dtos/user-response.dto';
-import { MessageResponseDto } from '../common/mappers/messageResponse.dto';
+import { MessageResponseDto } from '../common/dtos/messageResponse.dto';
+import { createAuthCookieOptions } from '../config/auth-cookie.config';
+import { ConfigService } from '@nestjs/config';
+import { StringValue } from 'ms';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @ApiOperation({
     summary: 'Register a new user',
@@ -59,12 +65,8 @@ export class AuthController {
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(dto);
 
-    response.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
+    const expiresIn = this.configService.getOrThrow<StringValue>('jwt.expiresIn');
+    response.cookie('access_token', result.accessToken, createAuthCookieOptions(expiresIn));
 
     return result.user;
   }
@@ -96,14 +98,13 @@ export class AuthController {
   })
   @Post('logout')
   logout(@Res({ passthrough: true }) response: Response) {
-    response.clearCookie('access_token', {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-    });
+    const expiresIn = this.configService.getOrThrow<StringValue>('jwt.expiresIn');
+    response.clearCookie('access_token', createAuthCookieOptions(expiresIn));
 
-    return {
+    const responseBody: MessageResponseDto = {
       message: 'Logged out successfully',
     };
+
+    return responseBody;
   }
 }
