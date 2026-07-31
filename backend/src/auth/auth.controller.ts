@@ -1,23 +1,60 @@
 import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dtos/register.dto';
+import { LoginDto } from './dtos/login.dto';
 import type { Response } from 'express';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { UserResponseDto } from '../users/dto/user-response.dto';
+import { UserResponseDto } from '../users/dtos/user-response.dto';
+import { MessageResponseDto } from '../common/mappers/messageResponse.dto';
 
-@ApiTags('auth')
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({
+    summary: 'Register a new user',
+    description: 'Creates a new user account and returns the created user.',
+  })
+  @ApiCreatedResponse({
+    description: 'User registered successfully.',
+    type: UserResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed.',
+  })
+  @ApiConflictResponse({
+    description: 'Email is already registered.',
+  })
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
+  @ApiOperation({
+    summary: 'Authenticate a user',
+    description: 'Authenticates a user and stores the JWT in an HttpOnly authentication cookie.',
+  })
+  @ApiOkResponse({
+    description: 'User authenticated successfully.',
+    type: UserResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication failed due to invalid credentials.',
+  })
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(dto);
@@ -29,17 +66,34 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
-    return {
-      user: result.user,
-    };
+    return result.user;
   }
 
+  @ApiOperation({
+    summary: 'Get current authenticated user',
+    description: 'Returns the currently authenticated user.',
+  })
+  @ApiOkResponse({
+    description: 'Authenticated user returned successfully.',
+    type: UserResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required.',
+  })
   @Get('me')
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: UserResponseDto) {
     return user;
   }
 
+  @ApiOperation({
+    summary: 'Logout current user',
+    description: 'Clears the authentication cookie and ends the current session.',
+  })
+  @ApiOkResponse({
+    description: 'User logged out successfully.',
+    type: MessageResponseDto,
+  })
   @Post('logout')
   logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('access_token', {

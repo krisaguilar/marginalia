@@ -7,9 +7,10 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
-import { RegisterDto } from './dto/register.dto';
-import { UserResponseDto } from '../users/dto/user-response.dto';
-import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dtos/register.dto';
+import { UserResponseDto } from '../users/dtos/user-response.dto';
+import { LoginDto } from './dtos/login.dto';
+import { UserMapper } from '../users/mappers/user.mapper';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +18,8 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
-  async register(dto: RegisterDto) {
+
+  async register(dto: RegisterDto): Promise<UserResponseDto> {
     const existingUser = await this.prisma.user.findUnique({
       where: {
         email: dto.email,
@@ -38,20 +40,25 @@ export class AuthService {
       },
     });
 
-    return new UserResponseDto(user);
+    return UserMapper.toResponse(user);
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<{
+    accessToken: string;
+    user: UserResponseDto;
+  }> {
     const user = await this.prisma.user.findUnique({
       where: {
         email: dto.email,
       },
     });
+
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
+
     if (!isMatch) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -65,7 +72,7 @@ export class AuthService {
 
     return {
       accessToken,
-      user: new UserResponseDto(user),
+      user: UserMapper.toResponse(user),
     };
   }
 
@@ -80,6 +87,6 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    return new UserResponseDto(user);
+    return UserMapper.toResponse(user);
   }
 }

@@ -2,7 +2,7 @@ import { createParamDecorator } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 
-import type { UserResponseDto } from '../../users/dto/user-response.dto';
+import type { UserResponseDto } from '../../users/dtos/user-response.dto';
 
 type RequestWithUser = Request & {
   user: UserResponseDto;
@@ -10,6 +10,5 @@ type RequestWithUser = Request & {
 
 export const CurrentUser = createParamDecorator((_, ctx: ExecutionContext): UserResponseDto => {
   const request = ctx.switchToHttp().getRequest<RequestWithUser>();
-
   return request.user;
 });

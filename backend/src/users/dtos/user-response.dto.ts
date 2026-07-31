@@ -15,10 +15,4 @@ export class UserResponseDto {
     example: 'John Doe',
   })
   displayName!: string;
-
-  constructor(user: { id: string; email: string; displayName: string }) {
-    this.id = user.id;
-    this.email = user.email;
-    this.displayName = user.displayName;
-  }
 }
